@@ -1,0 +1,21 @@
+#!/bin/bash
+#javac GpuKernel/KernelTest.java
+#javac GpuKernel/DLLLoader.java
+#javac GpuKernel/APXGaussianPhi.java
+cd ../../../target/classes
+javah -jni -o ../../src/main/cxx/APXGaussianPhi_JNI.h edu.tdo.kernel.GpuKernel.APXGaussianPhi
+
+NAME="APXGaussianPhi"
+JAVA_INCLUDE="/usr/lib/jvm/java-6-sun-1.6.0.26/include"
+OPTIONS="-Xcompiler -march=native -O3 -shared -I$JAVA_INCLUDE -I$JAVA_INCLUDE/linux -Xcompiler -shared,-fPIC,-Wno-deprecated -Xlinker -soname,lib$NAME.so.1"
+ARCH="-gencode arch=compute_20,code=sm_20"
+OUTPUT="-o lib$NAME.so"
+LIBS="-lcublas"
+INCLUDE="-I/usr/local/cuda/include"
+TARGETS="$NAME.cu $NAME.hpp"
+
+cd ../../src/main/cxx
+nvcc $1 $2 $OPTIONS $ARCH $OUTPUT $LIBS $INCLUDE $TARGETS
+
+mv lib$NAME.so ../resources
+#jar cvf APXGaussPhi-0.0.1-ls8gpu02.jar libAPXGaussianPhi.so GpuKernel/APXGaussianPhi.class GpuKernel/DLLLoader.class
