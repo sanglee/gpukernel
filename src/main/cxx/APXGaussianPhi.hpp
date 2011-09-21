@@ -16,7 +16,7 @@ template <class T> void uploadGPUConfig(const unsigned int d, const T std, const
 
 void printCurandState(curandState* s){
 	printf("d = %d, v[0] = %d, v[1] = %d, v[2] = %d, v[3] = %d, v[4] = %d\n", s->d, s->v[0], s->v[1], s->v[2], s->v[3], s->v[4]);
-	printf("boxmuller_flag = %d, boxmuller_extra = %f, boxmuller_extra_double = %f\n", s->boxmuller_flag, s->boxmuller_extra, s->boxmuller_extra_double);
+	//printf("boxmuller_flag = %d, boxmuller_extra = %f, boxmuller_extra_double = %f\n", s->boxmuller_flag, s->boxmuller_extra, s->boxmuller_extra_double);
 }
 
 template <class T>
@@ -60,20 +60,23 @@ class APXGaussianPhi {
 			dim3 grid(_blocks);
 			dim3 block(_threads);
 			
-			printf("sizeof(curandState) = %lu\n", sizeof(curandState));
-
 			cudaMalloc((void **)&rSN, _threads*d*sizeof(curandState));
-			cudaMalloc((void **)&rSU,          d*sizeof(curandState));
+			cudaMalloc((void **)&rSU, _threads*d*sizeof(curandState));
 			
 			cudaMemset(rSN, 0, _threads*d*sizeof(curandState));
-			cudaMemset(rSU, 0,          d*sizeof(curandState));
+			cudaMemset(rSU, 0, _threads*d*sizeof(curandState));
 
-			//initRNGs<T><<<grid, block>>>(d, time(0), rSN, rSU);
-	
-			printf("=== init ===\n");
-			h_rSN = (curandState*) malloc(_threads*d*sizeof(curandState));
-			cudaMemcpy(h_rSN, rSN, _threads*d*sizeof(curandState), cudaMemcpyDeviceToHost);
-			printCurandState(h_rSN);
+			initRNGs<T><<<grid, block>>>(d, time(0), rSN, rSU);
+
+			//printf("=== init ===\n");
+			
+			//h_rSN = (curandState*) malloc(_threads*d*sizeof(curandState));
+			//cudaMemcpy(h_rSN, rSN, _threads*d*sizeof(curandState), cudaMemcpyDeviceToHost);
+			
+			//h_rSU = (curandState*) malloc(_threads*d*sizeof(curandState));
+			//cudaMemcpy(h_rSU, rSU, _threads*d*sizeof(curandState), cudaMemcpyDeviceToHost);
+			
+			//printCurandState(&h_rSN[10*_threads]);
 
 			//printf("rSN adress = %p\n", rSN);
 			//printf("rSU adress = %p\n", rSU);
@@ -98,11 +101,12 @@ class APXGaussianPhi {
 			dim3 grid(_blocks);
 			dim3 block(_threads);
 
-			initRNGs<T><<<grid, block>>>(d, clock(), rSN, rSU);
-			
-			printf("=== before transform ===\n");
-			cudaMemcpy(h_rSN, rSN, _threads*d*sizeof(curandState), cudaMemcpyDeviceToHost);
-			printCurandState(h_rSN);
+			//initRNGs<T><<<grid, block>>>(d, clock(), rSN, rSU);
+			//cudaMemcpy(rSN, h_rSN, _threads*d*sizeof(curandState), cudaMemcpyHostToDevice);
+			//cudaMemcpy(rSU, h_rSU, _threads*d*sizeof(curandState), cudaMemcpyHostToDevice);
+			//printf("=== before transform ===\n");
+			//cudaMemcpy(h_rSN, rSN, _threads*d*sizeof(curandState), cudaMemcpyDeviceToHost);
+			//printCurandState(&h_rSN[10*_threads]);
 			
 			//printf("rSN adress = %p\n", rSN);
 			//printf("rSU adress = %p\n", rSU);
@@ -119,9 +123,9 @@ class APXGaussianPhi {
 			cudaFree(d_x);
 			cudaMemcpy(h_storage, d_storage, d*sizeof(T), cudaMemcpyDeviceToHost);
 
-			printf("=== after transform ===\n");
-			cudaMemcpy(h_rSN, rSN, _threads*d*sizeof(curandState), cudaMemcpyDeviceToHost);
-			printCurandState(h_rSN);
+			//printf("=== after transform ===\n");
+			//cudaMemcpy(h_rSN, rSN, _threads*d*sizeof(curandState), cudaMemcpyDeviceToHost);
+			//printCurandState(h_rSN);
 
 			return h_storage;
 		}
